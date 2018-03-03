@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
-  * File Name          : main.c
-  * Description        : Main program body
+  * @file           : main.c
+  * @brief          : Main program body
   ******************************************************************************
   * This notice applies to any and all portions of this file
   * that are not between comment pairs USER CODE BEGIN and
@@ -45,17 +45,21 @@
   *
   ******************************************************************************
   */
-
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32f4xx_hal.h"
 #include "cmsis_os.h"
 
 /* USER CODE BEGIN Includes */
+#define ADDRCMD_MASTER_READ                         ((uint16_t)0x1234)
+#define ADDRCMD_MASTER_WRITE                        ((uint16_t)0x5678)
+#define CMD_LENGTH                                  ((uint16_t)0x0004)
+#define DATA_LENGTH                                 ((uint16_t)0x0020)          
 
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
+uint8_t response = 0x25;
 SPI_HandleTypeDef hspi3;
 
 osThreadId defaultTaskHandle;
@@ -80,9 +84,13 @@ void StartDefaultTask(void const * argument);
 
 /* USER CODE END 0 */
 
+/**
+  * @brief  The application entry point.
+  *
+  * @retval None
+  */
 int main(void)
 {
-
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
@@ -106,7 +114,6 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_SPI3_Init();
-
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -155,8 +162,10 @@ int main(void)
 
 }
 
-/** System Clock Configuration
-*/
+/**
+  * @brief System Clock Configuration
+  * @retval None
+  */
 void SystemClock_Config(void)
 {
 
@@ -227,10 +236,10 @@ static void MX_SPI3_Init(void)
   hspi3.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi3.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
   hspi3.Init.CRCPolynomial = 10;
-  // if (HAL_SPI_Init(&hspi3) != HAL_OK)
-  // {
-  //   _Error_Handler(__FILE__, __LINE__);
-  // }
+  if (HAL_SPI_Init(&hspi3) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
 
 }
 
@@ -280,46 +289,39 @@ void StartDefaultTask(void const * argument)
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
   uint32_t prevWakeTime = osKernelSysTick();
-  uint16_t counter = 0;
+
+  uint8_t addrcmd[1] = {0xFF};
+  addrcmd[0] = (uint8_t) (ADDRCMD_MASTER_READ >> 8);
 
   for (;;)
   {
     osDelayUntil(&prevWakeTime, 250);
 
-    switch (counter)
+    HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
+
+    // default the response
+    if(HAL_SPI_Receive(&hspi3, (uint8_t *)&response, sizeof(response), 10000) != HAL_OK)
     {
-      case 0:
-        HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
-        counter = 1;
-        break;
+      Error_Handler();
+    }
 
-      case 1:
-        HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
-        counter = 2;
-        break;
+    uint8_t default_response = response;
 
-      case 2:
-        HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
-        counter = 3;
-        break;
+    if(HAL_SPI_Transmit(&hspi3, addrcmd, 1, 10000) != HAL_OK)
+    {
+      Error_Handler();
+    }
 
-      case 3:
-        counter = 4;
-        HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
-        break;
+    if(HAL_SPI_Receive(&hspi3, (uint8_t *)&response, sizeof(response), 10000) != HAL_OK)
+    {
+      Error_Handler();
+    }
 
-      case 4:
-        counter = 5;
-        HAL_GPIO_TogglePin(LED2_GPIO_Port, LED2_Pin);
-        break;
-
-      case 5:
-        counter = 0;
-        HAL_GPIO_TogglePin(LED2_GPIO_Port, LED2_Pin);
-        break;
+    if(response != default_response) {
+      HAL_GPIO_TogglePin(LED2_GPIO_Port, LED2_Pin);
     }
   }
-  /* USER CODE END 5 */ 
+  /* USER CODE END 5 */
 }
 
 /**
@@ -332,58 +334,56 @@ void StartDefaultTask(void const * argument)
   */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-/* USER CODE BEGIN Callback 0 */
+  /* USER CODE BEGIN Callback 0 */
 
-/* USER CODE END Callback 0 */
+  /* USER CODE END Callback 0 */
   if (htim->Instance == TIM1) {
     HAL_IncTick();
   }
-/* USER CODE BEGIN Callback 1 */
+  /* USER CODE BEGIN Callback 1 */
 
-/* USER CODE END Callback 1 */
+  /* USER CODE END Callback 1 */
 }
 
 /**
   * @brief  This function is executed in case of error occurrence.
-  * @param  None
+  * @param  file: The file name as string.
+  * @param  line: The line in file as a number.
   * @retval None
   */
-void _Error_Handler(char * file, int line)
+void _Error_Handler(char *file, int line)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
   while(1) 
   {
   }
-  /* USER CODE END Error_Handler_Debug */ 
+  /* USER CODE END Error_Handler_Debug */
 }
 
-#ifdef USE_FULL_ASSERT
-
+#ifdef  USE_FULL_ASSERT
 /**
-   * @brief Reports the name of the source file and the source line number
-   * where the assert_param error has occurred.
-   * @param file: pointer to the source file name
-   * @param line: assert_param error line source number
-   * @retval None
-   */
+  * @brief  Reports the name of the source file and the source line number
+  *         where the assert_param error has occurred.
+  * @param  file: pointer to the source file name
+  * @param  line: assert_param error line source number
+  * @retval None
+  */
 void assert_failed(uint8_t* file, uint32_t line)
-{
+{ 
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
   /* USER CODE END 6 */
-
 }
-
-#endif
-
-/**
-  * @}
-  */ 
+#endif /* USE_FULL_ASSERT */
 
 /**
   * @}
-*/ 
+  */
+
+/**
+  * @}
+  */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
