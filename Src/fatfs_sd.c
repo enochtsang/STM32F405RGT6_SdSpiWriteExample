@@ -132,7 +132,7 @@ static int wait_ready (	/* 1:Ready, 0:Timeout */
 	UINT wt			/* Timeout [ms] */
 )
 {
-	BYTE d;
+	BYTE d = 0xAA; // garbage
 
 	/* Set down counter */
 	TM_DELAY_SetTime2(wt);
@@ -140,7 +140,7 @@ static int wait_ready (	/* 1:Ready, 0:Timeout */
 	do {
 		d = TM_SPI_Send(FATFS_SPI, 0xFF);
 	} while (d != 0xFF && TM_DELAY_Time2());	/* Wait for card goes ready or timeout */
-	
+
 	return (d == 0xFF) ? 1 : 0;
 }
 
@@ -159,7 +159,7 @@ static int select (void)	/* 1:OK, 0:Timeout */
 {
 	FATFS_CS_LOW;
 	TM_SPI_Send(FATFS_SPI, 0xFF);	/* Dummy clock (force DO enabled) */
-	if (wait_ready(500)) {
+	if (wait_ready(10000)) {
 		return 1;	/* OK */
 	}
 	deselect();
