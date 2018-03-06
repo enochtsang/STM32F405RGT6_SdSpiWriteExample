@@ -49,12 +49,21 @@ C_SOURCES = \
   Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.c \
   Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c \
   Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c \
+  Src/diskio.c \
+  Src/fatfs_sd.c \
+  Src/ff.c \
   Src/freertos.c \
   Src/main.c \
   Src/stm32f4xx_hal_msp.c \
   Src/stm32f4xx_hal_timebase_TIM.c \
   Src/stm32f4xx_it.c \
-  Src/system_stm32f4xx.c  
+  Src/syscall.c \
+  Src/system_stm32f4xx.c \
+  Src/tm_stm32_delay.c \
+  Src/tm_stm32_fatfs.c \
+  Src/tm_stm32_gpio.c \
+  Src/tm_stm32_spi.c \
+  Src/unicode.c  
 ASM_SOURCES = \
   startup/startup_stm32f405xx.s
 

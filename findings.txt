@@ -1,0 +1,34 @@
+Use 	HAL_GPIO_WritePin(((GPIO_TypeDef *) ((0x40000000U + 0x00020000U) + 0x0800U)), ((uint16_t)0x2000), 1); to light up LED1
+
+main.c:119 FAIL f_mount(&FS, "0:", 1) == FR_OK
+ff.c:3240 FAIL res = find_volume(&path, &fs, 0); // res == 0
+ff.c:2986 FAIL if(stat & STA_NOINIT)
+
+-> diskio.c:166
+
+FATFS_LowLevelDrivers[pdrv].disk_initialize == 0
+
+pdrv == 0
+FATFS_LowLevelDrivers[pdrv].disk_initialize() == TM_FATFS_SD_disk_initialize
+
+-> fatfs_sd.c:283
+
+// one side of black jumper cable doesn't fit well one way onto dev board 3V3
+
+ff.c:340 TM_FATFS_SD_Stat == STA_NOINIT == 1
+STA_NOINIT defined at diskio.h:56
+
+ty == 0
+
+fatfs_sd.c:298 FAIL send_cmd(CMD0, 0) == 1
+
+-> fatfs_sd.c:226
+
+fatfs_sd.c:241 FAIL if(!select)
+
+0xFF is returned
+
+-> fatfs_sd.c:167
+
+timed out
+

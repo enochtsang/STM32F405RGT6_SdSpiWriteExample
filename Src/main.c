@@ -50,12 +50,11 @@
 #include "stm32f4xx_hal.h"
 #include "cmsis_os.h"
 
-/* USER CODE BEGIN Includes */
-#define ADDRCMD_MASTER_READ                         ((uint16_t)0x1234)
-#define ADDRCMD_MASTER_WRITE                        ((uint16_t)0x5678)
-#define CMD_LENGTH                                  ((uint16_t)0x0004)
-#define DATA_LENGTH                                 ((uint16_t)0x0020)          
+#include "defines.h"
+#include "tm_stm32_delay.h"
+#include "tm_stm32_fatfs.h"
 
+/* USER CODE BEGIN Includes */
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -66,7 +65,8 @@ osThreadId defaultTaskHandle;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-
+/* Fatfs object */
+FATFS FS;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -92,7 +92,6 @@ void StartDefaultTask(void const * argument);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
   /* USER CODE END 1 */
 
   /* MCU Configuration----------------------------------------------------------*/
@@ -115,6 +114,13 @@ int main(void)
   MX_GPIO_Init();
   MX_SPI3_Init();
   /* USER CODE BEGIN 2 */
+  HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, 0);
+  HAL_GPIO_WritePin(SD_CS_GPIO_Port, SD_CS_Pin, 0);
+
+  if (f_mount(&FS, "0:", 1) == FR_OK) {
+    HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, 1);
+    f_mount(NULL, "0:", 1);
+  }
 
   /* USER CODE END 2 */
 
@@ -290,36 +296,10 @@ void StartDefaultTask(void const * argument)
   /* Infinite loop */
   uint32_t prevWakeTime = osKernelSysTick();
 
-  uint8_t addrcmd[1] = {0xFF};
-  addrcmd[0] = (uint8_t) (ADDRCMD_MASTER_READ >> 8);
-
   for (;;)
   {
     osDelayUntil(&prevWakeTime, 250);
-
-    HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
-
-    // default the response
-    if(HAL_SPI_Receive(&hspi3, (uint8_t *)&response, sizeof(response), 10000) != HAL_OK)
-    {
-      Error_Handler();
-    }
-
-    uint8_t default_response = response;
-
-    if(HAL_SPI_Transmit(&hspi3, addrcmd, 1, 10000) != HAL_OK)
-    {
-      Error_Handler();
-    }
-
-    if(HAL_SPI_Receive(&hspi3, (uint8_t *)&response, sizeof(response), 10000) != HAL_OK)
-    {
-      Error_Handler();
-    }
-
-    if(response != default_response) {
-      HAL_GPIO_TogglePin(LED2_GPIO_Port, LED2_Pin);
-    }
+    HAL_GPIO_TogglePin(LED2_GPIO_Port, LED2_Pin);
   }
   /* USER CODE END 5 */
 }
