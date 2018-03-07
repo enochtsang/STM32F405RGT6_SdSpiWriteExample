@@ -54,6 +54,8 @@
 #include "tm_stm32_delay.h"
 #include "tm_stm32_fatfs.h"
 
+#include <stdio.h>
+
 /* USER CODE BEGIN Includes */
 /* USER CODE END Includes */
 
@@ -67,6 +69,11 @@ osThreadId defaultTaskHandle;
 /* Private variables ---------------------------------------------------------*/
 /* Fatfs object */
 FATFS FS;
+FIL fil;
+FRESULT fres;
+TM_FATFS_Size_t CardSize;
+char buffer[100];
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -115,11 +122,25 @@ int main(void)
   MX_SPI3_Init();
   /* USER CODE BEGIN 2 */
   HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, 0);
-  HAL_GPIO_WritePin(SD_CS_GPIO_Port, SD_CS_Pin, 0);
+  // HAL_GPIO_WritePin(SD_CS_GPIO_Port, SD_CS_Pin, 0);
 
-  if (f_mount(&FS, "0:", 1) == FR_OK) {
+  if (f_mount(&FS, "SD:", 1) == FR_OK) {
     HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, 1);
-    f_mount(NULL, "0:", 1);
+    if ((fres = f_open(&fil, "SD:first_file.txt", FA_OPEN_ALWAYS | FA_READ | FA_WRITE)) == FR_OK) {
+        // Read SDCARD size
+        TM_FATFS_GetDriveSize("SD:", &CardSize);
+        // Format string
+        sprintf(buffer, "BITCH Total card size: %u kBytes\n", CardSize.Total);
+        // Write total card size to file
+        f_puts(buffer, &fil);
+        // Format string for free card size
+        sprintf(buffer, "Free card size:  %u kBytes\n", CardSize.Free);
+        // Write free card size to file
+        f_puts(buffer, &fil);
+        // Close file
+        f_close(&fil);
+    }
+    f_mount(NULL, "SD:", 1);
   }
 
   /* USER CODE END 2 */
@@ -237,7 +258,7 @@ static void MX_SPI3_Init(void)
   hspi3.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi3.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi3.Init.NSS = SPI_NSS_SOFT;
-  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
   hspi3.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi3.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi3.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;

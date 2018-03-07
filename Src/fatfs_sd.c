@@ -141,6 +141,9 @@ static int wait_ready (	/* 1:Ready, 0:Timeout */
 		d = TM_SPI_Send(FATFS_SPI, 0xFF);
 	} while (d != 0xFF && TM_DELAY_Time2());	/* Wait for card goes ready or timeout */
 
+	// if(d != 0xFF) {
+	// 	HAL_GPIO_WritePin(((GPIO_TypeDef *) ((0x40000000U + 0x00020000U) + 0x0800U)), ((uint16_t)0x2000), 1);
+	// }
 	return (d == 0xFF) ? 1 : 0;
 }
 

@@ -32,3 +32,5 @@ fatfs_sd.c:241 FAIL if(!select)
 
 timed out
 
+fatfs_sd.c:292 	`if (!SDCARD_IsDetected()) {` does not fail with no SD card
+Nevermind, only useful if DETECT_PIN is being used
